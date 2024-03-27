@@ -343,13 +343,21 @@ begin
         colory^ := colory^ - coordinates[1].y - ((coordinates[2].y - coordinates[1].y) div 2);
 
         //7.5.1.Нахождение точки для заливки------------------------------------
-        for i := 1 to colory^ + 50 do begin
-
-            If (Canvas.Pixels[colorx^, i] = clblack) and (Canvas.Pixels[colorx^, i + 1] <> clblack) then begin
-               colory^ := i + 1;
-               break;
+        if (abs(coordinates[2].x - coordinates[1].x) > abs(coordinates[2].y - coordinates[1].y)) then begin
+           for i := 1 to colory^ + 150 do begin
+               If (Canvas.Pixels[colorx^, i] = clblack) and (Canvas.Pixels[colorx^, i + 1] <> clblack) then begin
+                  colory^ := i + 1;
+                  break;
+               end;
             end;
-
+        end
+        else begin
+             for i := 1000 downto colorx^ - 150 do begin
+                If (Canvas.Pixels[i, colory^] = clblack) and (Canvas.Pixels[i - 1, colory^] <> clblack) then begin
+                   colorx^ := i - 1;
+                   break;
+                end;
+            end;
         end;
         //7.5.1.----------------------------------------------------------------
 
