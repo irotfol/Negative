@@ -45,12 +45,12 @@ type
     ButtonClear: TButton;
     ButtonDraw: TButton;
     CheckBoxAxes: TCheckBox;
-    Edit1: TEdit;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
+    Label6: TLabel;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
@@ -78,6 +78,8 @@ var
   n:integer;
   pict:boolean;
   coordinates:xy;
+  authorfile:text;
+  author:string;
 
 implementation
 
@@ -87,15 +89,13 @@ implementation
 
 //Сохранение автора-------------------------------------------------------------
 procedure TForm1.MenuItem2Click(Sender: TObject);
-var
-  authorfile:text;
-  author:string;
 begin
-  assignfile(authorfile, 'Author.txt');
-  author:=Inputbox('Author', 'Enter author','');
-  rewrite(authorfile);
-  write(authorfile, author);
-  closefile(authorfile);
+     assignfile(authorfile, 'Author.txt');
+     author:=Inputbox('Author', 'Enter author','');
+     rewrite(authorfile);
+     write(authorfile, author);
+     closefile(authorfile);
+     form1.Label6.Caption:='Автор: ' + author;
 end;
 //------------------------------------------------------------------------------
 
@@ -104,6 +104,7 @@ var
   fil:text;
   tr:integer;
 begin
+     author:='';
      pict:=false;
      tr:=0;
      n := 0;
@@ -117,13 +118,23 @@ begin
         end;
         closefile(fil);
      end;
-
      assignfile(fil, 'data.txt');
      tr:=tr+1;
      rewrite(fil);
      write(fil, tr);
      closefile(fil);
+
      form1.Label5.Caption:='Количество запусков программы: ' + inttostr(tr);
+
+     assignfile(authorfile, 'Author.txt');
+     if FileExists('author.txt') then begin
+        reset(authorfile);
+        while not eof(authorfile) do begin
+            read(authorfile, author);
+        end;
+        closefile(authorfile);
+     end;
+     form1.Label6.Caption:='Автор: ' + author;
 //1.----------------------------------------------------------------------------
 
 //2.Заполнение шапки таблиц-----------------------------------------------------
