@@ -45,6 +45,7 @@ type
     ButtonClear: TButton;
     ButtonDraw: TButton;
     CheckBoxAxes: TCheckBox;
+    Edit1: TEdit;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
@@ -295,8 +296,10 @@ const
      color2 = clblue;
      //7.1.---------------------------------------------------------------------
 var
-  i:integer;
+  i,j:integer;
   colorx, colory:^integer;
+  p:array [0..3] of integer;
+  intersections:byte;
 
 //7.2.Заливка фигур-------------------------------------------------------------
 procedure colorfill(clr:tcolor; x, y:integer);
@@ -321,7 +324,6 @@ procedure Figure(sign, x, y:integer);
      Canvas.lineto(x + sign * coordinates[1].x, y - sign * coordinates[1].y);
 end;
 //7.3.--------------------------------------------------------------------------
-
 begin
      Form1.Refresh;
 
@@ -340,36 +342,49 @@ begin
         colorx^ := xpos1;
         colory^ := ypos1;
         colorx^ := colorx^ + coordinates[1].x + ((coordinates[2].x - coordinates[1].x) div 2);
-        colory^ := colory^ - coordinates[1].y - ((coordinates[2].y - coordinates[1].y) div 2);
+        colory^ := colory^ - coordinates[1].y - ((coordinates[2].x - coordinates[1].x) div 2);
 
         //7.5.1.Нахождение точки для заливки------------------------------------
-        if (abs(coordinates[2].x - coordinates[1].x) > abs(coordinates[2].y - coordinates[1].y)) then begin
-           for i := 1 to colory^ + 150 do begin
-               If (Canvas.Pixels[colorx^, i] = clblack) and (Canvas.Pixels[colorx^, i + 1] <> clblack) then begin
-                  colory^ := i + 1;
-                  break;
-               end;
-            end;
-        end
-        else begin
-             for i := 1000 downto colorx^ - 150 do begin
-                If (Canvas.Pixels[i, colory^] = clblack) and (Canvas.Pixels[i - 1, colory^] <> clblack) then begin
-                   colorx^ := i - 1;
-                   break;
+        intersections:=0;
+        if n > 3 then begin
+            for i:=1 to n-2 do begin
+                for j:= (i + 2) to n do begin
+                p[0]:=(coordinates[j+1].y - coordinates[j].y)*(coordinates[j+1].x - coordinates[i].x)-(coordinates[j+1].x - coordinates[j].x)*(coordinates[j+1].y - coordinates[i].y);
+                p[1]:=(coordinates[j+1].y - coordinates[j].y)*(coordinates[j+1].x - coordinates[i+1].x)-(coordinates[j+1].x - coordinates[j].x)*(coordinates[j+1].y - coordinates[i+1].y);
+                p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[j].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[j].y);
+                p[3]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[j+1].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[j+1].y);
+                if (p[0]*p[1]<0) and (p[2]*p[3]<0) then intersections:=intersections+1;
                 end;
             end;
         end;
-        //7.5.1.----------------------------------------------------------------
-
-        //7.5.2.Заливка фигуры--------------------------------------------------
-        colorfill(color1, colorx^, colory^);
-        colorx^ := -1 * (colorx^ - xpos1) + xpos2;
-        colory^ := -1 * (colory^ - ypos1) + ypos2;
-        colorfill(color2, colorx^, colory^);
-        //7.5.2.----------------------------------------------------------------
-
-        dispose(colorx);
-        dispose(colory);
+        if intersections > 0 then showmessage('Figure is self-intersecting polygon. The figure cannot be painted')
+        else begin
+             if (abs(coordinates[2].x - coordinates[1].x) > abs(coordinates[2].y - coordinates[1].y)) then begin
+                for i := 1 to colory^ + 150 do begin
+                    If (Canvas.Pixels[colorx^, i] = clblack) and (Canvas.Pixels[colorx^, i + 1] <> clblack) then begin
+                       colory^ := i + 1;
+                       break;
+                    end;
+                end;
+             end
+             else begin
+                  for i := 1000 downto colorx^ - 150 do begin
+                      If (Canvas.Pixels[i, colory^] = clblack) and (Canvas.Pixels[i - 1, colory^] <> clblack) then begin
+                         colorx^ := i - 1;
+                         break;
+                      end;
+                  end;
+             end;
+            //7.5.1.------------------------------------------------------------
+            //7.5.2.Заливка фигуры----------------------------------------------
+            colorfill(color1, colorx^, colory^);
+            colorx^ := -1 * (colorx^ - xpos1) + xpos2;
+            colory^ := -1 * (colory^ - ypos1) + ypos2;
+            colorfill(color2, colorx^, colory^);
+            //7.5.2.------------------------------------------------------------
+            dispose(colorx);
+            dispose(colory);
+        end;
      end;
      //7.6.Отрисовка осей-------------------------------------------------------
      CheckBox1Change(Sender);
