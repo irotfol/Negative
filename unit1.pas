@@ -49,8 +49,8 @@ type
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
-    Label5: TLabel;
-    Label6: TLabel;
+    LabelStartCount: TLabel;
+    LabelAuthor: TLabel;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
@@ -95,13 +95,13 @@ begin
      rewrite(authorfile);
      write(authorfile, author);
      closefile(authorfile);
-     form1.Label6.Caption:='Автор: ' + author;
+     form1.labelauthor.Caption:='Автор: ' + author;
 end;
 //------------------------------------------------------------------------------
 
 procedure TForm1.FormCreate(Sender: TObject);
 var
-  fil:text;
+  fil:file of integer;
   tr:integer;
 begin
      author:='';
@@ -109,33 +109,29 @@ begin
      tr:=0;
      n := 0;
 //1.Сохранение количества запусков----------------------------------------------
-     assignfile(fil, 'data.txt');
-
-     if FileExists('data.txt') then begin
+     assignfile(fil, 'data.dat');
+     if FileExists('data.dat') then begin
         reset(fil);
-        while not eof(fil) do begin
-              read(fil, tr);
-        end;
+        read(fil, tr);
         closefile(fil);
      end;
-     assignfile(fil, 'data.txt');
+
+     assignfile(fil, 'data.dat');
      tr:=tr+1;
      rewrite(fil);
      write(fil, tr);
      closefile(fil);
-
-     form1.Label5.Caption:='Количество запусков программы: ' + inttostr(tr);
-
-     assignfile(authorfile, 'Author.txt');
+     form1.Labelstartcount.Caption:='Количество запусков программы: ' + inttostr(tr);
+//1.----------------------------------------------------------------------------
+//1.1Сохранение автора----------------------------------------------------------
      if FileExists('author.txt') then begin
+        assignfile(authorfile, 'Author.txt');
         reset(authorfile);
-        while not eof(authorfile) do begin
-            read(authorfile, author);
-        end;
+        read(authorfile, author);
         closefile(authorfile);
      end;
-     form1.Label6.Caption:='Автор: ' + author;
-//1.----------------------------------------------------------------------------
+     form1.Labelauthor.Caption:='Автор: ' + author;
+//1.1---------------------------------------------------------------------------
 
 //2.Заполнение шапки таблиц-----------------------------------------------------
 with stringgrid1 do
@@ -307,7 +303,7 @@ const
      color2 = clblue;
      //7.1.---------------------------------------------------------------------
 var
-  i,j:integer;
+  i,i1,j:integer;
   colorx, colory:^integer;
   p:array [0..3] of integer;
   intersections:byte;
@@ -353,13 +349,14 @@ begin
         colorx^ := xpos1;
         colory^ := ypos1;
         colorx^ := colorx^ + coordinates[1].x + ((coordinates[2].x - coordinates[1].x) div 2);
-        colory^ := colory^ - coordinates[1].y - ((coordinates[2].x - coordinates[1].x) div 2);
+        colory^ := colory^ - coordinates[1].y - ((coordinates[2].y - coordinates[1].y) div 2);
 
         //7.5.1.Нахождение точки для заливки------------------------------------
         intersections:=0;
         if n > 3 then begin
-            for i:=1 to n-2 do begin
-                for j:= (i + 2) to n do begin
+            for i1:=3 to n + 1 do begin
+                i:=i1 mod (n-1);
+                for j:=i to n - 1 do begin
                 p[0]:=(coordinates[j+1].y - coordinates[j].y)*(coordinates[j+1].x - coordinates[i].x)-(coordinates[j+1].x - coordinates[j].x)*(coordinates[j+1].y - coordinates[i].y);
                 p[1]:=(coordinates[j+1].y - coordinates[j].y)*(coordinates[j+1].x - coordinates[i+1].x)-(coordinates[j+1].x - coordinates[j].x)*(coordinates[j+1].y - coordinates[i+1].y);
                 p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[j].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[j].y);
@@ -368,7 +365,7 @@ begin
                 end;
             end;
         end;
-        if intersections > 0 then showmessage('Figure is self-intersecting polygon. The figure cannot be painted')
+        if intersections > 0 then showmessage('Figure is self-intersecting polygon with '+inttostr(intersections)+'intersections The figure cannot be painted')
         else begin
              if (abs(coordinates[2].x - coordinates[1].x) > abs(coordinates[2].y - coordinates[1].y)) then begin
                 for i := 1 to colory^ + 150 do begin
