@@ -34,8 +34,12 @@ type
 
   { TForm1 }
   coord = record
-    x:integer;
-    y:integer;
+    x,y:integer;
+  end;
+  zveno = ^inters;
+  inters = record
+    amount:byte;
+    next:zveno;
   end;
 
   XY = array[1..rows] of coord;
@@ -77,9 +81,13 @@ var
   Form1:TForm1;
   n:integer;
   pict:boolean;
+  intersections:byte;
   coordinates:xy;
   authorfile:text;
   author:string;
+  p:array [0..3] of integer;
+  point,betw:zveno;
+
 
 implementation
 
@@ -105,8 +113,11 @@ var
   tr:integer;
 begin
      author:='';
-     pict:=false;
      tr:=0;
+     pict:=false;
+
+     new(point);
+     point:=nil;
      n := 0;
 //1.Сохранение количества запусков----------------------------------------------
      assignfile(fil, 'data.dat');
@@ -182,11 +193,14 @@ end;
 //4.1.--------------------------------------------------------------------------
 
 procedure TForm1.ButtonAddClick(xstr,ystr:string; Sender: TObject);
+var
+  i:integer;
 begin
      //4.2.Добавление строк-----------------------------------------------------
      n := n + 1;
      stringgrid2.RowCount := n + 1;
      //4.2.---------------------------------------------------------------------
+
 
      //4.3.Включение кнопкок "Удаление строк/Очистка координат"-----------------
      if n = 1 then begin
@@ -203,7 +217,9 @@ begin
          //4.3.2.---------------------------------------------------------------
 
          //4.3.3.Включение/Выключение кнопки "Удаление строк"-------------------
-         if n > 1 then ButtonDraw.enabled := true
+         if n > 1 then begin
+            ButtonDraw.enabled := true;
+         end
          else ButtonDraw.enabled := false;
          //4.3.3.---------------------------------------------------------------
      end;
@@ -212,6 +228,23 @@ begin
      //4.4.Добавление координат в массив----------------------------------------
      coordinates[n].x := strtoint(xstr);
      coordinates[n].y := strtoint(ystr);
+     if n > 3 then begin
+               new(betw);
+               intersections:=0;
+               for i:=1 to n-3 do begin
+                   p[0]:=(coordinates[n].y - coordinates[n-1].y)*(coordinates[n].x - coordinates[i].x)-(coordinates[n].x - coordinates[n-1].x)*(coordinates[n].y - coordinates[i].y);
+                   p[1]:=(coordinates[n].y - coordinates[n-1].y)*(coordinates[n].x - coordinates[i+1].x)-(coordinates[n].x - coordinates[n-1].x)*(coordinates[n].y - coordinates[i+1].y);
+                   p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[n-1].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[n-1].y);
+                   p[3]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[n].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[n].y);
+                   if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+                      intersections:=intersections+1;
+                   end;
+               end;
+               betw^.amount:=intersections;
+               betw^.next:=point;
+               new(point);
+               point:=betw;
+     end;
      //4.4.---------------------------------------------------------------------
 
      //4.5.Добавление координат в таблицу с координатами------------------------
@@ -228,6 +261,7 @@ end;
 //5.Удаление строки координаты--------------------------------------------------
 procedure TForm1.ButtonDeleteClick(Sender: TObject);
 begin
+     if point<>nil then point:=point^.next;
      //5.1.Удаление строк-------------------------------------------------------
      n := n - 1;
      stringgrid2.RowCount := n + 1;
@@ -267,6 +301,7 @@ var
   i:integer;
 begin
      Form1.Refresh;
+     point:=nil;
      pict:=false;
 
      CheckBox1Change(Sender);
@@ -303,10 +338,9 @@ const
      color2 = clblue;
      //7.1.---------------------------------------------------------------------
 var
-  i,i1,j:integer;
+  i,m:integer;
+  interstr:string;
   colorx, colory:^integer;
-  p:array [0..3] of integer;
-  intersections:byte;
 
 //7.2.Заливка фигур-------------------------------------------------------------
 procedure colorfill(clr:tcolor; x, y:integer);
@@ -345,58 +379,104 @@ begin
      if n > 2 then begin
         new(colorx);
         new(colory);
-
-        colorx^ := xpos1;
-        colory^ := ypos1;
-        colorx^ := colorx^ + coordinates[1].x + ((coordinates[2].x - coordinates[1].x) div 2);
-        colory^ := colory^ - coordinates[1].y - ((coordinates[2].y - coordinates[1].y) div 2);
-
+        colorx^:=0;
+        colory^:=0;
+        colorx^ := colorx^ + coordinates[1].x + (round((coordinates[2].x - coordinates[1].x) / 2));
+        colory^ := colory^ + coordinates[1].y + (round((coordinates[2].y - coordinates[1].y) / 2));
         //7.5.1.Нахождение точки для заливки------------------------------------
-        intersections:=0;
         if n > 3 then begin
-            for i1:=3 to n + 1 do begin
-                i:=i1 mod (n-1);
-                for j:=i to n - 1 do begin
-                p[0]:=(coordinates[j+1].y - coordinates[j].y)*(coordinates[j+1].x - coordinates[i].x)-(coordinates[j+1].x - coordinates[j].x)*(coordinates[j+1].y - coordinates[i].y);
-                p[1]:=(coordinates[j+1].y - coordinates[j].y)*(coordinates[j+1].x - coordinates[i+1].x)-(coordinates[j+1].x - coordinates[j].x)*(coordinates[j+1].y - coordinates[i+1].y);
-                p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[j].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[j].y);
-                p[3]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[j+1].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[j+1].y);
-                if (p[0]*p[1]<0) and (p[2]*p[3]<0) then intersections:=intersections+1;
-                end;
-            end;
+           new(betw);
+           intersections:=0;
+           for i:=2 to n-2 do begin
+               p[0]:=(coordinates[1].y - coordinates[n].y)*(coordinates[1].x - coordinates[i].x)-(coordinates[1].x - coordinates[n].x)*(coordinates[1].y - coordinates[i].y);
+               p[1]:=(coordinates[1].y - coordinates[n].y)*(coordinates[1].x - coordinates[i+1].x)-(coordinates[1].x - coordinates[n].x)*(coordinates[1].y - coordinates[i+1].y);
+               p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[n].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[n].y);
+               p[3]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[1].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[1].y);
+               if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+                  intersections:=intersections+1;
+               end;
+           end;
+           betw^.amount:=intersections;
+           betw^.next:=point;
+           new(point);
+           point:=betw;
         end;
-        if intersections > 0 then showmessage('Figure is self-intersecting polygon with '+inttostr(intersections)+'intersections The figure cannot be painted')
+        new(betw);
+        betw:=point;
+        interstr:='';
+        while (betw<>nil) do begin
+            if (betw^.amount<>0) then interstr:=interstr+' '+inttostr(betw^.amount);
+            betw:=betw^.next;
+        end;
+        if (interstr<>'') then showmessage('Figure is self-intersecting polygon with '+interstr+' intersections The figure cannot be painted')
         else begin
-             if (abs(coordinates[2].x - coordinates[1].x) > abs(coordinates[2].y - coordinates[1].y)) then begin
-                for i := 1 to colory^ + 150 do begin
-                    If (Canvas.Pixels[colorx^, i] = clblack) and (Canvas.Pixels[colorx^, i + 1] <> clblack) then begin
-                       colory^ := i + 1;
-                       break;
+           intersections:=0;
+           if (abs(coordinates[2].x - coordinates[1].x)) > (abs(coordinates[2].y - coordinates[1].y)) then begin
+              for i:=1 to n do begin
+                  m:=(i mod n)+ 1;
+                  p[0]:=((colory^) - 150)*(colorx^ - coordinates[i].x);
+                  p[1]:=((colory^) - 150)*(colorx^ - coordinates[m].x);
+                  p[2]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - colorx^)-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - 150);
+                  p[3]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - colorx^)-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - (colory^));
+                  if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+                     intersections:=intersections+1;
+                  end;
+              end;
+              if ((intersections mod 2) = 1) then begin
+                 repeat
+                       colory^:=colory^ - 1;
+                       showmessage('-y');
+                 until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+              end
+              else begin
+                 repeat
+                      colory^:=colory^ + 1;
+                      showmessage('+y');
+                 until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+              end;
+           end
+           else begin
+                for i:=1 to n do begin
+                    m:=(i mod n)+ 1;
+                    p[0]:=(-((colorx^) - 150))*(colory^ - coordinates[i].y);
+                    p[1]:=(-((colorx^) - 150))*(colory^ - coordinates[m].y);
+                    p[2]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - 150)-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - colory^);
+                    p[3]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - (colorx^))-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - colory^);
+                    if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+                       intersections:=intersections+1;
                     end;
                 end;
-             end
-             else begin
-                  for i := 1000 downto colorx^ - 150 do begin
-                      If (Canvas.Pixels[i, colory^] = clblack) and (Canvas.Pixels[i - 1, colory^] <> clblack) then begin
-                         colorx^ := i - 1;
-                         break;
-                      end;
-                  end;
-             end;
-            //7.5.1.------------------------------------------------------------
-            //7.5.2.Заливка фигуры----------------------------------------------
-            colorfill(color1, colorx^, colory^);
-            colorx^ := -1 * (colorx^ - xpos1) + xpos2;
-            colory^ := -1 * (colory^ - ypos1) + ypos2;
-            colorfill(color2, colorx^, colory^);
-            //7.5.2.------------------------------------------------------------
-            dispose(colorx);
-            dispose(colory);
+               if ((intersections mod 2) = 1) then begin
+                   repeat
+                        colorx^:=colorx^ - 1;
+                        showmessage('-x');
+                   until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+                end
+                else begin
+                     repeat
+                           colorx^:=colorx^ + 1;
+                           showmessage('+x');
+                     until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+                end;
+           end;
+           //7.5.1.------------------------------------------------------------
+           //7.5.2.Заливка фигуры----------------------------------------------
+           colorx^ := colorx^ + xpos1;
+           colory^ := ypos1 - colory^;
+           colorfill(color1, colorx^, colory^);
+           canvas.line(0,0,colorx^,colory^);
+           colorx^ := -1 * (colorx^ - xpos1) + xpos2;
+           colory^ := -1 * (colory^ - ypos1) + ypos2;
+           colorfill(color2, colorx^, colory^);
+           //7.5.2.------------------------------------------------------------
+           dispose(colorx);
+           dispose(colory);
         end;
      end;
      //7.6.Отрисовка осей-------------------------------------------------------
      CheckBox1Change(Sender);
      //7.6.---------------------------------------------------------------------
+     if (n > 3) and (point<>nil) then point:=point^.next;
 end;
 
 //8.Отрисовка осей--------------------------------------------------------------
