@@ -200,10 +200,9 @@ begin
      p[1]:=(cor4.y - cor3.y)*(cor4.x - cor2.x)-(cor4.x - cor3.x)*(cor4.y - cor2.y);
      p[2]:=(cor2.y - cor1.y)*(cor2.x - cor3.x)-(cor2.x - cor1.x)*(cor2.y - cor3.y);
      p[3]:=(cor2.y - cor1.y)*(cor2.x - cor4.x)-(cor2.x - cor1.x)*(cor2.y - cor4.y);
-     if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
-        intersection:=true;
-     end;
-     intersection:=false;
+     if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then
+     intersection:=true
+     else intersection:=false;
 end;
 
 procedure TForm1.ButtonAddClick(xstr,ystr:string; Sender: TObject);
