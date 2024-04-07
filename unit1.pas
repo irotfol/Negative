@@ -60,6 +60,7 @@ type
     MenuItem2: TMenuItem;
     StringGrid1: TStringGrid;
     StringGrid2: TStringGrid;
+    //function intersection(cor1,cor2,cor3,cor4:xy):boolean;
     procedure ButtonAddClick(xstr,ystr:string; Sender: TObject);
     procedure ButtonAddClick2(Sender: Tobject);
     procedure ButtonDeleteClick(Sender: TObject);
@@ -85,7 +86,6 @@ var
   coordinates:xy;
   authorfile:text;
   author:string;
-  p:array [0..3] of integer;
   point,betw:zveno;
 
 
@@ -192,6 +192,20 @@ begin
 end;
 //4.1.--------------------------------------------------------------------------
 
+function intersection(cor1,cor2,cor3,cor4:coord):boolean;
+var
+  p:array [0..3] of integer;
+begin
+     p[0]:=(cor4.y - cor3.y)*(cor4.x - cor1.x)-(cor4.x - cor3.x)*(cor4.y - cor1.y);
+     p[1]:=(cor4.y - cor3.y)*(cor4.x - cor2.x)-(cor4.x - cor3.x)*(cor4.y - cor2.y);
+     p[2]:=(cor2.y - cor1.y)*(cor2.x - cor3.x)-(cor2.x - cor1.x)*(cor2.y - cor3.y);
+     p[3]:=(cor2.y - cor1.y)*(cor2.x - cor4.x)-(cor2.x - cor1.x)*(cor2.y - cor4.y);
+     if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+        intersection:=true;
+     end;
+     intersection:=false;
+end;
+
 procedure TForm1.ButtonAddClick(xstr,ystr:string; Sender: TObject);
 var
   i:integer;
@@ -232,11 +246,7 @@ begin
                new(betw);
                intersections:=0;
                for i:=1 to n-3 do begin
-                   p[0]:=(coordinates[n].y - coordinates[n-1].y)*(coordinates[n].x - coordinates[i].x)-(coordinates[n].x - coordinates[n-1].x)*(coordinates[n].y - coordinates[i].y);
-                   p[1]:=(coordinates[n].y - coordinates[n-1].y)*(coordinates[n].x - coordinates[i+1].x)-(coordinates[n].x - coordinates[n-1].x)*(coordinates[n].y - coordinates[i+1].y);
-                   p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[n-1].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[n-1].y);
-                   p[3]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[n].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[n].y);
-                   if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+                   if intersection(coordinates[i],coordinates[i+1],coordinates[n-1],coordinates[n]) then begin
                       intersections:=intersections+1;
                    end;
                end;
@@ -341,6 +351,7 @@ var
   i,m:integer;
   interstr:string;
   colorx, colory:^integer;
+  first_p, second_p:coord;
 
 //7.2.Заливка фигур-------------------------------------------------------------
 procedure colorfill(clr:tcolor; x, y:integer);
@@ -388,12 +399,8 @@ begin
            new(betw);
            intersections:=0;
            for i:=2 to n-2 do begin
-               p[0]:=(coordinates[1].y - coordinates[n].y)*(coordinates[1].x - coordinates[i].x)-(coordinates[1].x - coordinates[n].x)*(coordinates[1].y - coordinates[i].y);
-               p[1]:=(coordinates[1].y - coordinates[n].y)*(coordinates[1].x - coordinates[i+1].x)-(coordinates[1].x - coordinates[n].x)*(coordinates[1].y - coordinates[i+1].y);
-               p[2]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[n].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[n].y);
-               p[3]:=(coordinates[i+1].y - coordinates[i].y)*(coordinates[i+1].x - coordinates[1].x)-(coordinates[i+1].x - coordinates[i].x)*(coordinates[i+1].y - coordinates[1].y);
-               if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
-                  intersections:=intersections+1;
+               if intersection(coordinates[i], coordinates[i+1], coordinates[1], coordinates[n]) then begin
+                      intersections:=intersections+1;
                end;
            end;
            betw^.amount:=intersections;
@@ -412,13 +419,13 @@ begin
         else begin
            intersections:=0;
            if (abs(coordinates[2].x - coordinates[1].x)) > (abs(coordinates[2].y - coordinates[1].y)) then begin
+              first_p.x:=colorx^;
+              first_p.y:=150;
+              second_p.x:=colorx^;
+              second_p.y:=colory^;
               for i:=1 to n do begin
                   m:=(i mod n)+ 1;
-                  p[0]:=((colory^) - 150)*(colorx^ - coordinates[i].x);
-                  p[1]:=((colory^) - 150)*(colorx^ - coordinates[m].x);
-                  p[2]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - colorx^)-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - 150);
-                  p[3]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - colorx^)-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - (colory^));
-                  if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
+                  if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
                      intersections:=intersections+1;
                   end;
               end;
@@ -436,15 +443,15 @@ begin
               end;
            end
            else begin
-                for i:=1 to n do begin
+               first_p.x:=150;
+               first_p.y:=colory^;
+               second_p.x:=colorx^;
+               second_p.y:=colory^;
+               for i:=1 to n do begin
                     m:=(i mod n)+ 1;
-                    p[0]:=(-((colorx^) - 150))*(colory^ - coordinates[i].y);
-                    p[1]:=(-((colorx^) - 150))*(colory^ - coordinates[m].y);
-                    p[2]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - 150)-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - colory^);
-                    p[3]:=(coordinates[m].y - coordinates[i].y)*(coordinates[m].x - (colorx^))-(coordinates[m].x - coordinates[i].x)*(coordinates[m].y - colory^);
-                    if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then begin
-                       intersections:=intersections+1;
-                    end;
+                    if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
+                     intersections:=intersections+1;
+                  end;
                 end;
                if ((intersections mod 2) = 1) then begin
                    repeat
@@ -464,7 +471,6 @@ begin
            colorx^ := colorx^ + xpos1;
            colory^ := ypos1 - colory^;
            colorfill(color1, colorx^, colory^);
-           canvas.line(0,0,colorx^,colory^);
            colorx^ := -1 * (colorx^ - xpos1) + xpos2;
            colory^ := -1 * (colory^ - ypos1) + ypos2;
            colorfill(color2, colorx^, colory^);
@@ -565,7 +571,6 @@ end;
 procedure TForm1.CheckBox2Change(Sender: TObject);
 begin
      Form1.Refresh;
-
      if pict then ButtonDrawClick(Sender)
      else CheckBox1Change(Sender);
 end;
