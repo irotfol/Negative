@@ -1,41 +1,35 @@
 unit Unit1;
-
 {$mode objfpc}{$H+}
-
 interface
-
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, Grids,
   ComCtrls, StdCtrls, Menus;
 
 const
+
      //Отступ слева для первого центра координат
      xpos1 = 480;
-
      //Отступ сверху для первого центра координат
      ypos1 = 160;
-
      //Отступ слева для второго центра координат
      xpos2 = 1020;
-
      //Отступ сверху для вторго центра координат
      ypos2 = 380;
-
      //Длина стрелок у координат
      arrow = 10;
-
      //Расстояние от центра координат до краев координатной плоскости
      length = 150;
-
      //Максимальное количество координат
      rows = 14;
 
 type
 
   { TForm1 }
+
   coord = record
     x,y:integer;
   end;
+
   zveno = ^inters;
   inters = record
     amount:byte;
@@ -60,7 +54,6 @@ type
     MenuItem2: TMenuItem;
     StringGrid1: TStringGrid;
     StringGrid2: TStringGrid;
-    //function intersection(cor1,cor2,cor3,cor4:xy):boolean;
     procedure ButtonAddClick(xstr,ystr:string; Sender: TObject);
     procedure ButtonAddClick2(Sender: Tobject);
     procedure ButtonDeleteClick(Sender: TObject);
@@ -73,29 +66,32 @@ type
     procedure MenuItem2Click(Sender: TObject);
 
   private
-
   public
-
   end;
+
 var
 
   Form1:TForm1;
+  //Количество координат
   n:integer;
+  //Нарисованы ли фигуры
   pict:boolean;
+  //Количество пересечений сторон
   intersections:byte;
+  //Массив для хранения координат
   coordinates:xy;
+  //Файл для хранения автора
   authorfile:text;
+  //Строка для хранения автора
   author:string;
+  //Стек для хранения пересечений
   point,betw:zveno;
 
-
 implementation
-
 {$R *.lfm}
-
 { TForm1 }
 
-//Сохранение автора-------------------------------------------------------------
+//1.Кнопка меню "Сохранение автора"---------------------------------------------
 procedure TForm1.MenuItem2Click(Sender: TObject);
 begin
      assignfile(authorfile, 'Author.txt');
@@ -105,59 +101,68 @@ begin
      closefile(authorfile);
      form1.labelauthor.Caption:='Автор: ' + author;
 end;
-//------------------------------------------------------------------------------
+//1.----------------------------------------------------------------------------
 
+//2.При открытии формы----------------------------------------------------------
 procedure TForm1.FormCreate(Sender: TObject);
 var
+  //Файл для хранения количества запусков
   fil:file of integer;
+  //Число для хранения количества запусков
   tr:integer;
 begin
+     //2.1.Очистка перменных/стека----------------------------------------------
      author:='';
      tr:=0;
      pict:=false;
-
      new(point);
      point:=nil;
      n := 0;
-//1.Сохранение количества запусков----------------------------------------------
+     //2.1.---------------------------------------------------------------------
+
+     //2.2.Считывание количества запусков---------------------------------------
      assignfile(fil, 'data.dat');
      if FileExists('data.dat') then begin
         reset(fil);
         read(fil, tr);
         closefile(fil);
      end;
+     //2.2.---------------------------------------------------------------------
 
+     //2.3.Запись количества запусков в файл------------------------------------
      assignfile(fil, 'data.dat');
      tr:=tr+1;
      rewrite(fil);
      write(fil, tr);
      closefile(fil);
+     //2.3.---------------------------------------------------------------------
+
      form1.Labelstartcount.Caption:='Количество запусков программы: ' + inttostr(tr);
-//1.----------------------------------------------------------------------------
-//1.1Сохранение автора----------------------------------------------------------
+
+     //2.4.Считывание автора из файла-------------------------------------------
+     assignfile(authorfile, 'Author.txt');
      if FileExists('author.txt') then begin
-        assignfile(authorfile, 'Author.txt');
         reset(authorfile);
         read(authorfile, author);
         closefile(authorfile);
      end;
-     form1.Labelauthor.Caption:='Автор: ' + author;
-//1.1---------------------------------------------------------------------------
+     //2.4----------------------------------------------------------------------
 
-//2.Заполнение шапки таблиц-----------------------------------------------------
-with stringgrid1 do
+     form1.Labelauthor.Caption:='Автор: ' + author;
+
+     //2.5.Заполнение шапки таблиц----------------------------------------------
+     with stringgrid1 do
 	begin
 	Cells[0,0] := 'X';
         Cells[1,0] := 'Y';
      end;
-
      with stringgrid2 do
 	begin
 	Cells[0, 0] := 'N';
         Cells[1, 0] := 'X';
         Cells[2, 0] := 'Y';
      end;
-
+     //2.5.---------------------------------------------------------------------
 end;
 //2.----------------------------------------------------------------------------
 
@@ -173,8 +178,6 @@ end;
 //3.----------------------------------------------------------------------------
 
 //4.Добавление координат--------------------------------------------------------
-
-//4.1.Проверка координат--------------------------------------------------------
 procedure TForm1.ButtonAddClick2(Sender: TObject);
 var
   x,y:^string;
@@ -183,15 +186,20 @@ begin
      new(y);
      x^:=stringgrid1.cells[0,1];
      y^:=stringgrid1.cells[1,1];
+
+     //4.1.Проверка координат---------------------------------------------------
      if x^ = '' then  x^ := '0';
      if y^ = '' then  y^ := '0';
      if not ((n > 0) and (strtoint(x^) = coordinates[n].x) and (strtoint(y^) = coordinates[n].y)) then ButtonAddClick(x^, y^, Sender)
      else showmessage('Coordinates can not be identical');
+     //4.1.--------------------------------------------------------------------------
+
      dispose(x);
      dispose(y);
 end;
-//4.1.--------------------------------------------------------------------------
+//4.----------------------------------------------------------------------------
 
+//5.Проверка двух сторон на пересечения-----------------------------------------
 function intersection(cor1,cor2,cor3,cor4:coord):boolean;
 var
   p:array [0..3] of integer;
@@ -204,6 +212,8 @@ begin
      intersection:=true
      else intersection:=false;
 end;
+//5.----------------------------------------------------------------------------
+
 
 procedure TForm1.ButtonAddClick(xstr,ystr:string; Sender: TObject);
 var
