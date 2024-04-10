@@ -432,11 +432,11 @@ begin
         if (interstr<>'') then showmessage('Figure is self-intersecting polygon with '+interstr+' intersections The figure cannot be painted')
         else begin
            intersections:=0;
+           second_p.x:=colorx^;
+           second_p.y:=colory^;
            if (abs(coordinates[2].x - coordinates[1].x)) > (abs(coordinates[2].y - coordinates[1].y)) then begin
               first_p.x:=colorx^;
               first_p.y:=150;
-              second_p.x:=colorx^;
-              second_p.y:=colory^;
               for i:=1 to n do begin
                   m:=(i mod n)+ 1;
                   if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
@@ -459,8 +459,6 @@ begin
            else begin
                first_p.x:=150;
                first_p.y:=colory^;
-               second_p.x:=colorx^;
-               second_p.y:=colory^;
                for i:=1 to n do begin
                     m:=(i mod n)+ 1;
                     if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
