@@ -107,9 +107,9 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 var
   //Файл для хранения количества запусков
-  fil:file of integer;
+  fil:file of word;
   //Число для хранения количества запусков
-  tr:integer;
+  tr:word;
 begin
      //2.1.Очистка перменных/стека----------------------------------------------
      author:='';
@@ -358,7 +358,7 @@ const
 var
   i,m:integer;
   interstr:string;
-  colorx, colory:^integer;
+  color_cord:^coord;
   first_p, second_p:coord;
 
 //9.2.Заливка фигур-------------------------------------------------------------
@@ -384,6 +384,11 @@ procedure Figure(sign, x, y:integer);
      Canvas.lineto(x + sign * coordinates[1].x, y - sign * coordinates[1].y);
 end;
 //9.3.--------------------------------------------------------------------------
+function CenterLine(coor1,coor2:coord):coord;
+begin
+     CenterLine.x:=coor1.x + (round((coor2.x - coor1.x) / 2));
+     CenterLine.y:=coor1.y + (round((coor2.y - coor1.y) / 2));
+end;
 
 begin
      Form1.Refresh;
@@ -397,12 +402,10 @@ begin
 
      //9.5.Заливка фигуры если точек больше 2-----------------------------------
      if n > 2 then begin
-        new(colorx);
-        new(colory);
-        colorx^:=0;
-        colory^:=0;
-        colorx^ := colorx^ + coordinates[1].x + (round((coordinates[2].x - coordinates[1].x) / 2));
-        colory^ := colory^ + coordinates[1].y + (round((coordinates[2].y - coordinates[1].y) / 2));
+        new(color_cord);
+        color_cord^.x:=0;
+        color_cord^.y:=0;
+        color_cord^ := CenterLine(coordinates[1], coordinates[2]);
 
         //9.5.1.Определение количества пересечений------------------------------
         if n > 3 then begin
@@ -432,11 +435,11 @@ begin
         if (interstr<>'') then showmessage('Figure is self-intersecting polygon with '+interstr+' intersections The figure cannot be painted')
         else begin
            intersections:=0;
-           second_p.x:=colorx^;
-           second_p.y:=colory^;
+           second_p.x:=color_cord^.x;
+           second_p.y:=color_cord^.y;
            if (abs(coordinates[2].x - coordinates[1].x)) > (abs(coordinates[2].y - coordinates[1].y)) then begin
-              first_p.x:=colorx^;
-              first_p.y:=150;
+              first_p.x:=color_cord^.x;
+              first_p.y:=length;
               for i:=1 to n do begin
                   m:=(i mod n)+ 1;
                   if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
@@ -445,20 +448,20 @@ begin
               end;
               if ((intersections mod 2) = 1) then begin
                  repeat
-                       colory^:=colory^ - 1;
+                       color_cord^.y:=color_cord^.y - 1;
                        showmessage('-y');
-                 until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+                 until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
               end
               else begin
                  repeat
-                      colory^:=colory^ + 1;
+                      color_cord^.y:=color_cord^.y + 1;
                       showmessage('+y');
-                 until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+                 until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
               end;
            end
            else begin
-               first_p.x:=150;
-               first_p.y:=colory^;
+               first_p.x:=length;
+               first_p.y:=color_cord^.y;
                for i:=1 to n do begin
                     m:=(i mod n)+ 1;
                     if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
@@ -467,25 +470,24 @@ begin
                 end;
                if ((intersections mod 2) = 1) then begin
                    repeat
-                        colorx^:=colorx^ - 1;
+                        color_cord^.x:=color_cord^.x - 1;
                         showmessage('-x');
-                   until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+                   until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
                 end
                 else begin
                      repeat
-                           colorx^:=colorx^ + 1;
+                           color_cord^.x:=color_cord^.x + 1;
                            showmessage('+x');
-                     until (Canvas.Pixels[colorx^ + xpos1, -colory^+ypos1] <> clblack);
+                     until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
                 end;
            end;
-           colorx^ := colorx^ + xpos1;
-           colory^ := ypos1 - colory^;
-           colorfill(color1, colorx^, colory^);
-           colorx^ := -1 * (colorx^ - xpos1) + xpos2;
-           colory^ := -1 * (colory^ - ypos1) + ypos2;
-           colorfill(color2, colorx^, colory^);
-           dispose(colorx);
-           dispose(colory);
+           color_cord^.x := color_cord^.x + xpos1;
+           color_cord^.y := ypos1 - color_cord^.y;
+           colorfill(color1, color_cord^.x, color_cord^.y);
+           color_cord^.x := -1 * (color_cord^.x - xpos1) + xpos2;
+           color_cord^.y := -1 * (color_cord^.y - ypos1) + ypos2;
+           colorfill(color2, color_cord^.x, color_cord^.y);
+           dispose(color_cord);
         end;
      end;
      //9.5.2.Заливка фигуры-----------------------------------------------------
