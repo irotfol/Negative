@@ -318,10 +318,8 @@ const
      color2 = clblue;
      //9.1.---------------------------------------------------------------------
 var
-  i,m:integer;
-  intersections:byte;
-  color_cord:^coord;
-  first_p:coord;
+  intersections,i,m:byte;
+  color_cord,first_p:^coord;
 
 //9.2.Заливка фигур-------------------------------------------------------------
 procedure colorfill(clr:tcolor; x, y:integer);
@@ -335,7 +333,7 @@ end;
 
 //9.3.Отрисовка Фигуры----------------------------------------------------------
 procedure Figure(sign, x, y:integer);
- var i:integer;
+ var i:byte;
      begin
      Canvas.moveto(x + sign * coordinates[1].x, y - sign * coordinates[1].y);
 
@@ -378,14 +376,16 @@ begin
         new(color_cord);
         color_cord^.x:=0;
         color_cord^.y:=0;
-        first_p.y:=length;
+        new(first_p);
+        first_p^.y:=length;
         for i:=0 to n - 1 do begin
             color_cord^:=CenterLine(CenterLine(coordinates[i+1], coordinates[((i+1) mod n)+1]), CenterLine(coordinates[((i+1) mod n) + 1], coordinates[((i+2) mod n) + 1]));
-            first_p.x:=color_cord^.x;
+            first_p^.x:=color_cord^.x;
             intersections:=0;
             for m:=0 to n-1 do begin
-                if intersection(first_p, color_cord^, coordinates[m+1], coordinates[((m+1) mod n) + 1 ]) then intersections:=intersections+1;
+                if intersection(first_p^, color_cord^, coordinates[m+1], coordinates[((m+1) mod n) + 1 ]) then intersections:=intersections+1;
             end;
+            dispose(first_p);
             if intersections mod 2 = 1 then break;
         end;
         //9.5.2.-------------------------------------------------------------
