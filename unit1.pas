@@ -359,7 +359,7 @@ var
   i,m:integer;
   interstr:string;
   color_cord:^coord;
-  first_p, second_p:coord;
+  first_p:coord;
 
 //9.2.Заливка фигур-------------------------------------------------------------
 procedure colorfill(clr:tcolor; x, y:integer);
@@ -402,10 +402,6 @@ begin
 
      //9.5.Заливка фигуры если точек больше 2-----------------------------------
      if n > 2 then begin
-        new(color_cord);
-        color_cord^.x:=0;
-        color_cord^.y:=0;
-        color_cord^ := CenterLine(coordinates[1], coordinates[2]);
 
         //9.5.1.Определение количества пересечений------------------------------
         if n > 3 then begin
@@ -431,56 +427,26 @@ begin
             betw:=betw^.next;
         end;
 
-        //9.5.2.Заливка фигур---------------------------------------------------
+        //9.5.2.Определение точки заливки фигуры--------------------------------
         if (interstr<>'') then showmessage('Figure is self-intersecting polygon with '+interstr+' intersections The figure cannot be painted')
         else begin
-           intersections:=0;
-           second_p.x:=color_cord^.x;
-           second_p.y:=color_cord^.y;
-           if (abs(coordinates[2].x - coordinates[1].x)) > (abs(coordinates[2].y - coordinates[1].y)) then begin
-              first_p.x:=color_cord^.x;
-              first_p.y:=length;
-              for i:=1 to n do begin
-                  m:=(i mod n)+ 1;
-                  if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
-                     intersections:=intersections+1;
-                  end;
-              end;
-              if ((intersections mod 2) = 1) then begin
-                 repeat
-                       color_cord^.y:=color_cord^.y - 1;
-                       showmessage('-y');
-                 until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
-              end
-              else begin
-                 repeat
-                      color_cord^.y:=color_cord^.y + 1;
-                      showmessage('+y');
-                 until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
-              end;
-           end
-           else begin
-               first_p.x:=length;
-               first_p.y:=color_cord^.y;
-               for i:=1 to n do begin
-                    m:=(i mod n)+ 1;
-                    if intersection(first_p, second_p, coordinates[i],coordinates[m]) then begin
-                     intersections:=intersections+1;
-                  end;
-                end;
-               if ((intersections mod 2) = 1) then begin
-                   repeat
-                        color_cord^.x:=color_cord^.x - 1;
-                        showmessage('-x');
-                   until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
-                end
-                else begin
-                     repeat
-                           color_cord^.x:=color_cord^.x + 1;
-                           showmessage('+x');
-                     until (Canvas.Pixels[color_cord^.x + xpos1, -color_cord^.y+ypos1] <> clblack);
-                end;
+           new(color_cord);
+           color_cord^.x:=0;
+           color_cord^.y:=0;
+           first_p.y:=length;
+           for i:=0 to n - 1 do begin
+               color_cord^:=CenterLine(CenterLine(coordinates[i+1], coordinates[((i+1) mod n)+1]), CenterLine(coordinates[((i+1) mod n) + 1], coordinates[((i+2) mod n) + 1]));
+               first_p.x:=color_cord^.x;
+               intersections:=0;
+               for m:=0 to n-1 do
+               begin
+                    if intersection(first_p, color_cord^, coordinates[m+1], coordinates[((m+1) mod n) + 1 ]) then intersections:=intersections+1;
+               end;
+               if intersections mod 2 = 1 then break;
            end;
+           //9.5.2.-------------------------------------------------------------
+
+           //9.5.3.Заливка фигуры-----------------------------------------------
            color_cord^.x := color_cord^.x + xpos1;
            color_cord^.y := ypos1 - color_cord^.y;
            colorfill(color1, color_cord^.x, color_cord^.y);
@@ -490,7 +456,7 @@ begin
            dispose(color_cord);
         end;
      end;
-     //9.5.2.Заливка фигуры-----------------------------------------------------
+     //9.5.3.-------------------------------------------------------------------
      CheckBox1Change(Sender);
      if (n > 3) and (point<>nil) then point:=point^.next;
 end;
