@@ -27,11 +27,16 @@ type
 
   { TForm1 }
 
-  coord = record
+  Coord = record
     x,y:integer;
   end;
 
-  XY = array[1..rows] of coord;
+  pointer = ^coordinates1;
+  coordinates1 = record
+    next: pointer;
+    xy: Coord;
+  end;
+
   TForm1 = class(TForm)
     ButtonAdd: TButton;
     ButtonDelete: TButton;
@@ -45,8 +50,8 @@ type
     LabelStartCount: TLabel;
     LabelAuthor: TLabel;
     MainMenu1: TMainMenu;
-    MenuItem1: TMenuItem;
-    MenuItem2: TMenuItem;
+    MenuItemFile: TMenuItem;
+    MenuItemSaveAuthor: TMenuItem;
     StringGrid1: TStringGrid;
     StringGrid2: TStringGrid;
     procedure ButtonAddClick(Sender: TObject);
@@ -57,7 +62,7 @@ type
     procedure CheckBox2Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormWindowStateChange(Sender: TObject);
-    procedure MenuItem2Click(Sender: TObject);
+    procedure MenuItemSaveAuthorClick(Sender: TObject);
 
   private
   public
@@ -70,19 +75,19 @@ var
   n:integer;
   //Нарисованы ли фигуры
   pict:boolean;
-  //Массив для хранения координат
-  coordinates:xy;
   //Файл для хранения автора
   authorfile:text;
   //Строка для хранения автора
   author:^string;
+
+  p_stack, p_temp, p_temp2, p_end: pointer;
 
 implementation
 {$R *.lfm}
 { TForm1 }
 
 //1.Кнопка меню "Сохранение автора"---------------------------------------------
-procedure TForm1.MenuItem2Click(Sender: TObject);
+procedure TForm1.MenuItemSaveAuthorClick(Sender: TObject);
 begin
      assignfile(authorfile, 'Author.txt');
      new(author);
@@ -106,6 +111,8 @@ begin
      //2.1.Очистка перменных/стека----------------------------------------------
      n := 0;
      pict:=false;
+     new(p_stack);
+     p_stack:=nil;
      //2.1.---------------------------------------------------------------------
 
      //2.2.Считывание количества запусков---------------------------------------
@@ -168,7 +175,7 @@ end;
 //3.----------------------------------------------------------------------------
 
 //5.Проверка двух сторон на пересечения-----------------------------------------
-function intersection(cor1,cor2,cor3,cor4:coord):boolean;
+function intersection(cor1,cor2,cor3,cor4:Coord):boolean;
 var
   p:array [0..3] of integer;
 begin
@@ -189,20 +196,22 @@ begin
      if str = '' then stringtoint:= 0
      else stringtoint:=strtoint(str);
 end;
-var
-  next_coord:^coord;
 begin
-     new(next_coord);
-     next_coord^.x:=stringtoint(stringgrid1.cells[0,1]);
-     next_coord^.y:=stringtoint(stringgrid1.cells[1,1]);
-     if (n > 0) and (next_coord^.x = coordinates[n].x) and (next_coord^.y = coordinates[n].y) then begin
+     new(p_temp);
+     p_temp^.next:=p_stack;
+     p_temp^.xy.x:=stringtoint(stringgrid1.cells[0,1]);
+     p_temp^.xy.y:=stringtoint(stringgrid1.cells[1,1]);
+     if (n > 0) and (p_temp^.xy.x = p_stack^.xy.x) and (p_temp^.xy.y = p_stack^.xy.y) then begin
         showmessage('Coordinates can not be identical');
         exit;
      end;
-     //6.1.Добавление координат в массив----------------------------------------
+     //6.1.Добавление координат в стек------------------------------------------
+
+     p_stack:=p_temp;
+     new(p_temp);
+     p_temp:=nil;
      n := n + 1;
-     coordinates[n] := next_coord^;
-     dispose(next_coord);
+
      //6.1.---------------------------------------------------------------------
 
      //6.1.Добавление строк-----------------------------------------------------
@@ -249,6 +258,7 @@ begin
      //7.1.Удаление строк-------------------------------------------------------
      n := n - 1;
      stringgrid2.RowCount := n + 1;
+     p_stack:=p_stack^.next;
      //7.1.---------------------------------------------------------------------
 
      //7.2.Включение/Выключение кнопки "Удаление строк"-------------------------
@@ -283,7 +293,8 @@ var
   i:byte;
 begin
      Form1.Refresh;
-
+     new(p_stack);
+     p_stack:=nil;
      pict:=false;
 
      CheckBox1Change(Sender);
@@ -318,8 +329,8 @@ const
      color2 = clblue;
      //9.1.---------------------------------------------------------------------
 var
-  intersections,i,m:byte;
-  color_cord,first_p:^coord;
+  intersections:byte;
+  color_cord,first_p:^Coord;
 
 //9.2.Заливка фигур-------------------------------------------------------------
 procedure colorfill(clr:tcolor; x, y:integer);
@@ -333,18 +344,20 @@ end;
 
 //9.3.Отрисовка Фигуры----------------------------------------------------------
 procedure Figure(sign, x, y:integer);
- var i:byte;
-     begin
-     Canvas.moveto(x + sign * coordinates[1].x, y - sign * coordinates[1].y);
-
-     for i := 2 to n do begin
-         Canvas.lineto(x + sign * coordinates[i].x , y - sign * coordinates[i].y);
+begin
+     new(p_temp);
+     p_temp:=p_stack;
+     Canvas.moveto(x + sign * p_temp^.xy.x, y - sign * p_temp^.xy.y);
+     while p_temp^.next<>nil do begin
+           Canvas.lineto(x + sign * p_temp^.xy.x, y - sign * p_temp^.xy.y);
+           p_temp:=p_temp^.next;
      end;
-
-     Canvas.lineto(x + sign * coordinates[1].x, y - sign * coordinates[1].y);
+     Canvas.lineto(x + sign * p_temp^.xy.x, y - sign * p_temp^.xy.y);
+     p_end:=p_temp;
+     Canvas.lineto(x + sign * p_stack^.xy.x, y - sign * p_stack^.xy.y);
 end;
 //9.3.--------------------------------------------------------------------------
-function CenterLine(coor1,coor2:coord):coord;
+function CenterLine(coor1,coor2:Coord):Coord;
 begin
      CenterLine.x:=coor1.x + (round((coor2.x - coor1.x) / 2));
      CenterLine.y:=coor1.y + (round((coor2.y - coor1.y) / 2));
@@ -364,10 +377,13 @@ begin
         //9.5.1.Определение количества пересечений------------------------------
         if n > 3 then begin
            intersections:=0;
-           for i:=2 to n-2 do begin
-               if intersection(coordinates[i], coordinates[i+1], coordinates[1], coordinates[n]) then begin
+           new(p_temp);
+           p_temp:=p_stack^.next;
+           while (p_temp^.next^.next<>nil) do begin
+               if intersection(p_temp^.xy, p_temp^.next^.xy, p_end^.xy, p_stack^.xy) then begin
                       intersections:=intersections+1;
                end;
+               p_temp:=p_temp^.next;
            end;
         end;
         //9.5.1.----------------------------------------------------------------
@@ -376,18 +392,24 @@ begin
         new(color_cord);
         color_cord^.x:=0;
         color_cord^.y:=0;
+        new(p_temp);
+        new(p_temp2);
+        p_temp:=p_stack;
         new(first_p);
         first_p^.y:=length;
-        for i:=0 to n - 1 do begin
-            color_cord^:=CenterLine(CenterLine(coordinates[i+1], coordinates[((i+1) mod n)+1]), CenterLine(coordinates[((i+1) mod n) + 1], coordinates[((i+2) mod n) + 1]));
-            first_p^.x:=color_cord^.x;
+        while (p_temp^.next^.next<>nil) do begin
+            color_cord^:=CenterLine(CenterLine(p_temp^.xy, p_temp^.next^.xy), CenterLine(p_temp^.next^.xy, p_temp^.next^.next^.xy));
             intersections:=0;
-            for m:=0 to n-1 do begin
-                if intersection(first_p^, color_cord^, coordinates[m+1], coordinates[((m+1) mod n) + 1 ]) then intersections:=intersections+1;
+            first_p^.x:=color_cord^.x;
+            p_temp2:=p_stack;
+            while (p_temp2^.next<>nil) do begin
+                if intersection(first_p^, color_cord^, p_temp2^.xy, p_temp2^.next^.xy) then intersections:=intersections+1;
+                p_temp2:=p_temp2^.next;
             end;
-            dispose(first_p);
             if intersections mod 2 = 1 then break;
+            p_temp:=p_temp^.next;
         end;
+        dispose(first_p);
         //9.5.2.-------------------------------------------------------------
 
         //9.5.3.Заливка фигуры-----------------------------------------------
