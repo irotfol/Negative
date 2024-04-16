@@ -333,10 +333,10 @@ end;
 procedure TForm1.CheckBox1Change(Sender: TObject);
 
 //10.2.Отрисовка линий осей-----------------------------------------------------
-procedure axes(image:timage; clr:color; x, y:integer);
+procedure axes(image:timage; clr:tcolor; x, y:integer);
 begin
      with image.canvas do begin
-          Brush.color:=clr;
+          pen.color:=clr;
           line(x - length, y, x + length, y);
           line(x, y + length, x, y - length);
           moveto(x + length - arrow, y + arrow);
@@ -351,7 +351,7 @@ end;
 
 var
   vis:boolean;
-  colr:color;
+  colr:tcolor;
 begin
      //10.5.Отрисовка осей------------------------------------------------------
      if Form1.CheckBoxAxes.Checked then begin
@@ -362,17 +362,16 @@ begin
         vis:=false;
         colr:=clwhite;
      end;
-     //10.5.3.Обзначения-----------------------------------------------------
+     //10.5.2.Оси---------------------------------------------------------------
+     axes(image1, colr, xpos, ypos);
+     axes(image2, colr, xpos, ypos);
+     //10.5.2.------------------------------------------------------------------
+     //10.5.3.Обзначения--------------------------------------------------------
      label1.visible:=vis;
      label3.visible:=vis;
      label2.visible:=vis;
      label4.visible:=vis;
-     //10.5.3.---------------------------------------------------------------
-
-     //10.5.2.Оси------------------------------------------------------------
-     axes(image1, xpos, ypos);
-     axes(image2, xpos, ypos);
-     //10.5.2.---------------------------------------------------------------
+     //10.5.3.------------------------------------------------------------------
      //10.5.--------------------------------------------------------------------
 
 end;
