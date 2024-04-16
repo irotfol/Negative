@@ -9,13 +9,9 @@ const
      //Высота строки
      Row_Heigth = 22;
      //Отступ слева для первого центра координат
-     xpos1 = 480;
+     xpos = 150;
      //Отступ сверху для первого центра координат
-     ypos1 = 160;
-     //Отступ слева для второго центра координат
-     xpos2 = 1020;
-     //Отступ сверху для вторго центра координат
-     ypos2 = 380;
+     ypos = 150;
      //Длина стрелок у координат
      arrow = 10;
      //Расстояние от центра координат до краев координатной плоскости
@@ -27,22 +23,15 @@ type
 
   { TForm1 }
 
-  Coord = record
-    x,y:integer;
-  end;
-
-  pointer = ^coordinates1;
-  coordinates1 = record
-    next: pointer;
-    xy: Coord;
-  end;
-
+  xy = Array of Tpoint;
   TForm1 = class(TForm)
     ButtonAdd: TButton;
     ButtonDelete: TButton;
     ButtonClear: TButton;
     ButtonDraw: TButton;
     CheckBoxAxes: TCheckBox;
+    Image1: TImage;
+    Image2: TImage;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
@@ -69,8 +58,8 @@ type
   end;
 
 var
-
   Form1:TForm1;
+  coordinates_f, coordinates_s:xy;
   //Количество координат
   n:integer;
   //Нарисованы ли фигуры
@@ -79,8 +68,6 @@ var
   authorfile:text;
   //Строка для хранения автора
   author:^string;
-
-  p_stack, p_temp, p_temp2, p_end: pointer;
 
 implementation
 {$R *.lfm}
@@ -108,11 +95,10 @@ var
   //Число для хранения количества запусков
   tr:^word;
 begin
-     //2.1.Очистка перменных/стека----------------------------------------------
+     //2.1.Очистка перменных/массива--------------------------------------------
      n := 0;
      pict:=false;
-     new(p_stack);
-     p_stack:=nil;
+     setlength(coordinates_f, n);
      //2.1.---------------------------------------------------------------------
 
      //2.2.Считывание количества запусков---------------------------------------
@@ -174,72 +160,66 @@ begin
 end;
 //3.----------------------------------------------------------------------------
 
-//5.Проверка двух сторон на пересечения-----------------------------------------
-function intersection(cor1,cor2,cor3,cor4:Coord):boolean;
-var
-  p:array [0..3] of integer;
-begin
-     p[0]:=(cor4.y - cor3.y)*(cor4.x - cor1.x)-(cor4.x - cor3.x)*(cor4.y - cor1.y);
-     p[1]:=(cor4.y - cor3.y)*(cor4.x - cor2.x)-(cor4.x - cor3.x)*(cor4.y - cor2.y);
-     p[2]:=(cor2.y - cor1.y)*(cor2.x - cor3.x)-(cor2.x - cor1.x)*(cor2.y - cor3.y);
-     p[3]:=(cor2.y - cor1.y)*(cor2.x - cor4.x)-(cor2.x - cor1.x)*(cor2.y - cor4.y);
-     if (p[0]*p[1]<=0) and (p[2]*p[3]<=0) then
-     intersection:=true
-     else intersection:=false;
-end;
-//5.----------------------------------------------------------------------------
-
 //6.Запись кооординат-----------------------------------------------------------
 procedure TForm1.ButtonAddClick(Sender: TObject);
+
 function stringtoint(str:string):integer;
 begin
      if str = '' then stringtoint:= 0
      else stringtoint:=strtoint(str);
 end;
+var
+  new_coord:^Tpoint;
 begin
-     new(p_temp);
-     p_temp^.next:=p_stack;
-     p_temp^.xy.x:=stringtoint(stringgrid1.cells[0,1]);
-     p_temp^.xy.y:=stringtoint(stringgrid1.cells[1,1]);
-     if (n > 0) and (p_temp^.xy.x = p_stack^.xy.x) and (p_temp^.xy.y = p_stack^.xy.y) then begin
-        showmessage('Coordinates can not be identical');
-        exit;
+     //6.1.Проверка координаты--------------------------------------------------
+     new(new_coord);
+     new_coord^.X:=stringtoint(stringgrid1.cells[0,1]) + xpos;
+     new_coord^.Y:=stringtoint(stringgrid1.cells[1,1]) + ypos;
+     if (coordinates_f <> nil) then begin
+        if (new_coord^.X = coordinates_f[n].X) and (new_coord^.Y = coordinates_f[n].Y) then begin
+           showmessage('Coordinates can not be identical');
+           exit;
+        end;
      end;
-     //6.1.Добавление координат в стек------------------------------------------
-
-     p_stack:=p_temp;
-     new(p_temp);
-     p_temp:=nil;
-     n := n + 1;
-
      //6.1.---------------------------------------------------------------------
 
-     //6.1.Добавление строк-----------------------------------------------------
+     //6.2.Добавление координаты в массив-----------------------------------------
+     setlength(coordinates_f, n + 1);
+     coordinates_f[n]:= new_coord^;
+     new_coord^.X:=-new_coord^.X + 2 * xpos;
+     new_coord^.Y:=-new_coord^.Y + 2 * ypos;
+     setlength(coordinates_s, n + 1);
+     coordinates_s[n]:=new_coord^;
+     dispose(new_coord);
+     n:=n + 1;
+     //6.2.---------------------------------------------------------------------
+
+     //6.3.Добавление строк-----------------------------------------------------
      stringgrid2.RowCount := n + 1;
-     //6.1.---------------------------------------------------------------------
+     //6.3.---------------------------------------------------------------------
 
-     //6.2.Включение кнопкок "Удаление строк/Очистка координат"-----------------
+     //6.4.Включение кнопкок "Удаление строк/Очистка координат"-----------------
      if n = 1 then begin
         ButtonDelete.visible := true;
         ButtonClear.enabled := true;
      end
      else begin
-         //6.3.1.Визуал для кнопки удаление строки(сдвиг на высоту строки)------
+         //6.4.1.Визуал для кнопки удаление строки(сдвиг на высоту строки)------
          ButtonDelete.top := ButtonDelete.top + Row_Heigth;
-         //6.3.1.---------------------------------------------------------------
+         //6.4.1.---------------------------------------------------------------
 
-         //6.3.2.Выключение кнопки "Добавление координаты"----------------------
+         //6.4.2.Выключение кнопки "Добавление координаты"----------------------
          if n = rows then ButtonAdd.enabled := false;
-         //6.3.2.---------------------------------------------------------------
+         //6.4.2.---------------------------------------------------------------
 
-         //6.3.3.Включение/Выключение кнопки "Удаление строк"-------------------
+         //6.4.3.Включение/Выключение кнопки "Удаление строк"-------------------
          if n > 1 then begin
             ButtonDraw.enabled := true;
          end
          else ButtonDraw.enabled := false;
-         //6.3.3.---------------------------------------------------------------
+         //6.4.3.---------------------------------------------------------------
      end;
-     //6.3.---------------------------------------------------------------------
+     //6.4.---------------------------------------------------------------------
 
      //6.5.Добавление координат в таблицу с координатами------------------------
      with stringgrid2 do
@@ -256,9 +236,8 @@ end;
 procedure TForm1.ButtonDeleteClick(Sender: TObject);
 begin
      //7.1.Удаление строк-------------------------------------------------------
+     stringgrid2.RowCount := n;
      n := n - 1;
-     stringgrid2.RowCount := n + 1;
-     p_stack:=p_stack^.next;
      //7.1.---------------------------------------------------------------------
 
      //7.2.Включение/Выключение кнопки "Удаление строк"-------------------------
@@ -293,10 +272,9 @@ var
   i:byte;
 begin
      Form1.Refresh;
-     new(p_stack);
-     p_stack:=nil;
      pict:=false;
-
+     setlength(coordinates_f,0);
+     setlength(coordinates_s,0);
      CheckBox1Change(Sender);
 
      //8.1.Выключение кнопки "Очистка координат"--------------------------------
@@ -328,100 +306,24 @@ const
      color1 = clred;
      color2 = clblue;
      //9.1.---------------------------------------------------------------------
-var
-  intersections:byte;
-  color_cord,first_p:^Coord;
 
-//9.2.Заливка фигур-------------------------------------------------------------
-procedure colorfill(clr:tcolor; x, y:integer);
+//9.2.Отрисовка фигуры----------------------------------------------------------
+procedure figure(image:timage; clr:tcolor; arr:xy);
      begin
-     with form1.Canvas do begin
+     with image.Canvas do begin
         Brush.Color := clr;
-        FloodFill(x, y, clblack, fsborder);
+        Polygon(arr, false,0,-1);
      end;
 end;
 //9.2.--------------------------------------------------------------------------
 
-//9.3.Отрисовка Фигуры----------------------------------------------------------
-procedure Figure(sign, x, y:integer);
-begin
-     new(p_temp);
-     p_temp:=p_stack;
-     Canvas.moveto(x + sign * p_temp^.xy.x, y - sign * p_temp^.xy.y);
-     while p_temp^.next<>nil do begin
-           Canvas.lineto(x + sign * p_temp^.xy.x, y - sign * p_temp^.xy.y);
-           p_temp:=p_temp^.next;
-     end;
-     Canvas.lineto(x + sign * p_temp^.xy.x, y - sign * p_temp^.xy.y);
-     p_end:=p_temp;
-     Canvas.lineto(x + sign * p_stack^.xy.x, y - sign * p_stack^.xy.y);
-end;
+
 //9.3.--------------------------------------------------------------------------
-function CenterLine(coor1,coor2:Coord):Coord;
 begin
-     CenterLine.x:=coor1.x + (round((coor2.x - coor1.x) / 2));
-     CenterLine.y:=coor1.y + (round((coor2.y - coor1.y) / 2));
-end;
-
-begin
-     Form1.Refresh;
-
      //9.4.Отрисовка Фигур------------------------------------------------------
-     Figure(1, xpos1, ypos1);
-     Figure(-1, xpos2, ypos2);
+     Figure(Image1, color1, coordinates_f);
+     Figure(Image2, color2, coordinates_s);
      //9.4.---------------------------------------------------------------------
-
-     //9.5.Заливка фигуры если точек больше 2-----------------------------------
-     if n > 2 then begin
-
-        //9.5.1.Определение количества пересечений------------------------------
-        if n > 3 then begin
-           intersections:=0;
-           new(p_temp);
-           p_temp:=p_stack^.next;
-           while (p_temp^.next^.next<>nil) do begin
-               if intersection(p_temp^.xy, p_temp^.next^.xy, p_end^.xy, p_stack^.xy) then begin
-                      intersections:=intersections+1;
-               end;
-               p_temp:=p_temp^.next;
-           end;
-        end;
-        //9.5.1.----------------------------------------------------------------
-
-        //9.5.2.Определение точки заливки фигуры--------------------------------
-        new(color_cord);
-        color_cord^.x:=0;
-        color_cord^.y:=0;
-        new(p_temp);
-        new(p_temp2);
-        p_temp:=p_stack;
-        new(first_p);
-        first_p^.y:=length;
-        while (p_temp^.next^.next<>nil) do begin
-            color_cord^:=CenterLine(CenterLine(p_temp^.xy, p_temp^.next^.xy), CenterLine(p_temp^.next^.xy, p_temp^.next^.next^.xy));
-            intersections:=0;
-            first_p^.x:=color_cord^.x;
-            p_temp2:=p_stack;
-            while (p_temp2^.next<>nil) do begin
-                if intersection(first_p^, color_cord^, p_temp2^.xy, p_temp2^.next^.xy) then intersections:=intersections+1;
-                p_temp2:=p_temp2^.next;
-            end;
-            if intersections mod 2 = 1 then break;
-            p_temp:=p_temp^.next;
-        end;
-        dispose(first_p);
-        //9.5.2.-------------------------------------------------------------
-
-        //9.5.3.Заливка фигуры-----------------------------------------------
-        color_cord^.x := color_cord^.x + xpos1;
-        color_cord^.y := ypos1 - color_cord^.y;
-        colorfill(color1, color_cord^.x, color_cord^.y);
-        color_cord^.x := -1 * (color_cord^.x - xpos1) + xpos2;
-        color_cord^.y := -1 * (color_cord^.y - ypos1) + ypos2;
-        colorfill(color2, color_cord^.x, color_cord^.y);
-        dispose(color_cord);
-     end;
-     //9.5.3.-------------------------------------------------------------------
      pict:=true;
      CheckBox1Change(Sender);
 end;
@@ -431,13 +333,12 @@ end;
 procedure TForm1.CheckBox1Change(Sender: TObject);
 
 //10.2.Отрисовка линий осей-----------------------------------------------------
-procedure axes(x, y:integer);
+procedure axes(image:timage; clr:color; x, y:integer);
 begin
-     with Canvas do begin
+     with image.canvas do begin
+          Brush.color:=clr;
           line(x - length, y, x + length, y);
           line(x, y + length, x, y - length);
-     end;
-     with Canvas do begin
           moveto(x + length - arrow, y + arrow);
           lineto(x + length, y);
           lineto(x + length - arrow, y - arrow);
@@ -448,56 +349,30 @@ begin
 end;
 //10.2.-------------------------------------------------------------------------
 
-//10.3.Отрисовка обозначений x осей---------------------------------------------
-procedure labelx(lbl:tlabel; x, y:integer);
-begin
-     with lbl do begin
-          Top:= y;
-          left:= x + length + arrow;
-          Visible:=true;
-     end;
-end;
-//10.3.-------------------------------------------------------------------------
-
-//10.4.Отрисовка обозначений y осей---------------------------------------------
-procedure labely(lbl:tlabel; x, y:integer);
-     begin
-     with lbl do begin
-        Top:= y - length - arrow;
-        left:= x + arrow;
-        Visible:=true;
-     end;
-end;
-//10.4.-------------------------------------------------------------------------
-
-
+var
+  vis:boolean;
+  colr:color;
 begin
      //10.5.Отрисовка осей------------------------------------------------------
      if Form1.CheckBoxAxes.Checked then begin
-
-        //10.5.2.Оси------------------------------------------------------------
-        axes(xpos1, ypos1);
-        axes(xpos2, ypos2);
-        //10.5.2.---------------------------------------------------------------
-
-        //10.5.3.Обзначения-----------------------------------------------------
-        labelx(label1, xpos1, ypos1);
-        labely(label3, xpos1, ypos1);
-        labelx(label2, xpos2, ypos2);
-        labely(label4, xpos2, ypos2);
-        //10.5.3.---------------------------------------------------------------
-
+        vis:=true;
+        colr:=clblack;
      end
      else begin
-
-        //10.5.4.Стирание обзначений-------------------------------------------
-         label1.Visible:=false;
-         label2.Visible:=false;
-         label3.Visible:=false;
-         label4.Visible:=false;
-         //10.5.4.--------------------------------------------------------------
-
+        vis:=false;
+        colr:=clwhite;
      end;
+     //10.5.3.Обзначения-----------------------------------------------------
+     label1.visible:=vis;
+     label3.visible:=vis;
+     label2.visible:=vis;
+     label4.visible:=vis;
+     //10.5.3.---------------------------------------------------------------
+
+     //10.5.2.Оси------------------------------------------------------------
+     axes(image1, xpos, ypos);
+     axes(image2, xpos, ypos);
+     //10.5.2.---------------------------------------------------------------
      //10.5.--------------------------------------------------------------------
 
 end;
@@ -506,8 +381,10 @@ end;
 //11.Изменение чекбокса отрисовки осей------------------------------------------
 procedure TForm1.CheckBox2Change(Sender: TObject);
 begin
-     Form1.Refresh;
-     if pict then ButtonDrawClick(Sender)
+     if pict then begin
+        Form1.Refresh;
+        ButtonDrawClick(Sender);
+     end
      else CheckBox1Change(Sender);
 end;
 //11.---------------------------------------------------------------------------
