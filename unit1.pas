@@ -67,8 +67,6 @@ var
   coordinates_f, coordinates_s:xy;
   //Количество координат
   n:byte;
-  //Файл для хранения автора
-  authorfile:text;
 
 implementation
 {$R *.lfm}
@@ -82,7 +80,8 @@ end;
 
 procedure TForm1.MenuItemLoadAuthorClick(Sender: TObject);
 begin
-     if FileExists('author_info.txt') then memo1.lines.LoadFromFile('author_info.txt');
+     if FileExists('author_info.txt') then
+     memo1.lines.LoadFromFile('author_info.txt');
 end;
 //1.----------------------------------------------------------------------------
 
@@ -92,7 +91,7 @@ var
   //Файл для хранения количества запусков
   fil:file of word;
   //Число для хранения количества запусков
-  tr:word;
+  launches_count:word;
 begin
      //2.1.Заполнение шапки таблиц----------------------------------------------
      with stringgrid1 do
@@ -112,18 +111,18 @@ begin
      if FileExists('data.dat') then begin
         assignfile(fil, 'data.dat');
         reset(fil);
-        read(fil, tr);
-        edit1.text:=inttostr(tr);
+        read(fil, launches_count);
+        edit1.text:=inttostr(launches_count);
         closefile(fil);
      end
-     else tr:=1;
+     else launches_count:=1;
      //2.2.---------------------------------------------------------------------
 
      //2.3.Запись количества запусков в файл------------------------------------
      assignfile(fil, 'data.dat');
-     tr:=tr+1;
+     launches_count:=launches_count+1;
      rewrite(fil);
-     write(fil, tr);
+     write(fil, launches_count);
      closefile(fil);
      //2.3.---------------------------------------------------------------------
 
@@ -175,11 +174,9 @@ begin
      //5.1.---------------------------------------------------------------------
 
      //5.2.Проверка координаты--------------------------------------------------
-     if (coordinates_f <> nil) then begin
-        if (new_coord^.X = coordinates_f[n].X) and (new_coord^.Y = coordinates_f[n].Y) then begin
-           showmessage('Coordinates can not be identical');
-           exit;
-        end;
+     if (coordinates_f <> nil) and (new_coord^.X = coordinates_f[n].X) and (new_coord^.Y = coordinates_f[n].Y) then begin
+        showmessage('Coordinates can not be identical');
+        exit;
      end;
      //5.2.---------------------------------------------------------------------
 
