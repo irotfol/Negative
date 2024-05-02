@@ -29,6 +29,7 @@ type
     ButtonClear: TButton;
     ButtonDraw: TButton;
     CheckBoxAxes: TCheckBox;
+    Edit1: TEdit;
     Image1: TImage;
     Image2: TImage;
     Label1: TLabel;
@@ -38,11 +39,14 @@ type
     LabelStartCount: TLabel;
     LabelAuthor: TLabel;
     MainMenu1: TMainMenu;
+    Memo1: TMemo;
+    MenuItemLoadAuthor: TMenuItem;
     MenuItemExit: TMenuItem;
     MenuItemFile: TMenuItem;
     MenuItemSaveAuthor: TMenuItem;
     StringGrid1: TStringGrid;
     StringGrid2: TStringGrid;
+    procedure MenuItemLoadAuthorClick(Sender: TObject);
     procedure MenuItemSaveAuthorClick(Sender: TObject);     //1.
     procedure FormCreate(Sender: TObject);                  //2.
     procedure FormWindowStateChange(Sender: TObject);       //3.
@@ -65,24 +69,20 @@ var
   n:byte;
   //Файл для хранения автора
   authorfile:text;
-  //Строка для хранения автора
-  author:^string;
 
 implementation
 {$R *.lfm}
 { TForm1 }
 
-//1.Кнопка меню "Сохранение автора"---------------------------------------------
+//1.Кнопки меню "Сохранение/загрузка информации об автора"----------------------
 procedure TForm1.MenuItemSaveAuthorClick(Sender: TObject);
 begin
-     assignfile(authorfile, 'Author.txt');
-     new(author);
-     author^:=Inputbox('Author', 'Enter author','');
-     rewrite(authorfile);
-     write(authorfile, author^);
-     form1.labelauthor.Caption:='Автор: ' + author^;
-     dispose(author);
-     closefile(authorfile);
+     memo1.lines.SaveToFile('author_info.txt');
+end;
+
+procedure TForm1.MenuItemLoadAuthorClick(Sender: TObject);
+begin
+     if FileExists('author_info.txt') then memo1.lines.LoadFromFile('author_info.txt');
 end;
 //1.----------------------------------------------------------------------------
 
@@ -92,7 +92,7 @@ var
   //Файл для хранения количества запусков
   fil:file of word;
   //Число для хранения количества запусков
-  tr:^word;
+  tr:word;
 begin
      //2.1.Заполнение шапки таблиц----------------------------------------------
      with stringgrid1 do
@@ -108,42 +108,28 @@ begin
      end;
      //2.1.---------------------------------------------------------------------
 
-     //2.2.Считывание автора из файла-------------------------------------------
-     assignfile(authorfile, 'Author.txt');
-     if FileExists('author.txt') then begin
-        reset(authorfile);
-        new(author);
-        read(authorfile, author^);
-        form1.Labelauthor.Caption:='Автор: ' + author^;
-        dispose(author);
-        closefile(authorfile);
-     end;
-     //2.2----------------------------------------------------------------------
-
-     //2.3.Считывание количества запусков и запись в label----------------------
-     assignfile(fil, 'data.dat');
-     new(tr);
+     //2.2.Считывание количества запусков и запись в Edit1----------------------
      if FileExists('data.dat') then begin
+        assignfile(fil, 'data.dat');
         reset(fil);
-        read(fil, tr^);
-        form1.Labelstartcount.Caption:='Количество запусков программы: ' + inttostr(tr^);
+        read(fil, tr);
+        edit1.text:=inttostr(tr);
         closefile(fil);
      end
-     else tr^:=1;
+     else tr:=1;
+     //2.2.---------------------------------------------------------------------
+
+     //2.3.Запись количества запусков в файл------------------------------------
+     assignfile(fil, 'data.dat');
+     tr:=tr+1;
+     rewrite(fil);
+     write(fil, tr);
+     closefile(fil);
      //2.3.---------------------------------------------------------------------
 
-     //2.4.Запись количества запусков в файл------------------------------------
-     assignfile(fil, 'data.dat');
-     tr^:=tr^+1;
-     rewrite(fil);
-     write(fil, tr^);
-     dispose(tr);
-     closefile(fil);
-     //2.4.---------------------------------------------------------------------
-
-     //2.5.Очистка перменной----------------------------------------------------
+     //2.4.Очистка перменной----------------------------------------------------
      n := 0;
-     //2.5.---------------------------------------------------------------------
+     //2.4.---------------------------------------------------------------------
 end;
 //2.----------------------------------------------------------------------------
 
@@ -163,7 +149,7 @@ procedure TForm1.MenuItemExitClick(Sender: TObject);
 begin
      setlength(coordinates_f,0);
      setlength(coordinates_s,0);
-     halt;
+     close;
 end;
 //4.----------------------------------------------------------------------------
 
@@ -212,7 +198,7 @@ begin
      stringgrid2.RowCount := n + 1;
      //5.4.---------------------------------------------------------------------
 
-     //5.5.Включение кнопкок "Удаление строк/Очистка координат"-----------------
+     //5.5.Включение кнопок "Удаление строк/Очистка координат"-----------------
      if n = 1 then begin
         ButtonDelete.visible := true;
         ButtonClear.enabled := true;
@@ -259,7 +245,7 @@ begin
      else ButtonDraw.enabled := false;
      //6.2.---------------------------------------------------------------------
 
-     //6.3.Выключение кнопкок "Удаление строк/Очистка координат"----------------
+     //6.3.Выключение кнопок "Удаление строк/Очистка координат"----------------
      if (n < 1) then begin
         ButtonDelete.visible := false;
         ButtonClear.enabled := false;
@@ -271,7 +257,7 @@ begin
         ButtonDelete.top := ButtonDelete.top - Row_Heigth;
         //6.4.------------------------------------------------------------------
 
-        //6.5.Включение кнопкок "Добавление координат"--------------------------
+        //6.5.Включение кнопок "Добавление координат"--------------------------
         if n = rows - 1 then
         ButtonAdd.enabled := true;
         //6.5.------------------------------------------------------------------
