@@ -21,45 +21,44 @@ const
 
 type
   { TForm1 }
-
   xy = Array of Tpoint;
   TForm1 = class(TForm)
-    ButtonAdd: TButton;
-    ButtonDelete: TButton;
-    ButtonClear: TButton;
-    ButtonDraw: TButton;
-    CheckBoxAxes: TCheckBox;
-    Edit1: TEdit;
-    Image1: TImage;
-    Image2: TImage;
-    Label1: TLabel;
-    Label2: TLabel;
-    Label3: TLabel;
-    Label4: TLabel;
-    LabelStartCount: TLabel;
-    LabelAuthor: TLabel;
-    MainMenu1: TMainMenu;
-    Memo1: TMemo;
-    MenuItemLoadAuthor: TMenuItem;
-    MenuItemExit: TMenuItem;
-    MenuItemFile: TMenuItem;
-    MenuItemSaveAuthor: TMenuItem;
-    StringGrid1: TStringGrid;
-    StringGrid2: TStringGrid;
-    procedure MenuItemLoadAuthorClick(Sender: TObject);
-    procedure MenuItemSaveAuthorClick(Sender: TObject);     //1.
-    procedure FormCreate(Sender: TObject);                  //2.
-    procedure FormWindowStateChange(Sender: TObject);       //3.
-    procedure MenuItemExitClick(Sender: TObject);           //4.
-    procedure ButtonAddClick(Sender: TObject);              //5.
-    procedure ButtonDeleteClick(Sender: TObject);           //6.
-    procedure ButtonClearClick(Sender: TObject);            //7.
-    procedure ButtonDrawClick(Sender: TObject);             //8.
-    procedure CheckBox1Change(Sender: TObject);             //9.
+  ButtonAdd: TButton;
+  ButtonDelete: TButton;
+  ButtonClear: TButton;
+  ButtonDraw: TButton;
+  CheckBoxAxes: TCheckBox;
+  Edit1: TEdit;
+  Image1: TImage;
+  Image2: TImage;
+  Label1: TLabel;
+  Label2: TLabel;
+  Label3: TLabel;
+  Label4: TLabel;
+  LabelStartCount: TLabel;
+  LabelAuthor: TLabel;
+  MainMenu1: TMainMenu;
+  Memo1: TMemo;
+  MenuItemLoadAuthor: TMenuItem;
+  MenuItemExit: TMenuItem;
+  MenuItemFile: TMenuItem;
+  MenuItemSaveAuthor: TMenuItem;
+  StringGrid1: TStringGrid;
+  StringGrid2: TStringGrid;
+  procedure MenuItemLoadAuthorClick(Sender: TObject);     //1.
+  procedure MenuItemSaveAuthorClick(Sender: TObject);
+  procedure FormCreate(Sender: TObject);                  //2.
+  procedure FormWindowStateChange(Sender: TObject);       //3.
+  procedure MenuItemExitClick(Sender: TObject);           //4.
+  procedure ButtonAddClick(Sender: TObject);              //5.
+  procedure ButtonDeleteClick(Sender: TObject);           //6.
+  procedure ButtonClearClick(Sender: TObject);            //7.
+  procedure ButtonDrawClick(Sender: TObject);             //8.
+  procedure CheckBox1Change(Sender: TObject);             //9.
 
   private
   public
-  end;
+end;
 
 var
   Form1:TForm1;
@@ -77,7 +76,6 @@ procedure TForm1.MenuItemSaveAuthorClick(Sender: TObject);
 begin
      memo1.lines.SaveToFile('author_info.txt');
 end;
-
 procedure TForm1.MenuItemLoadAuthorClick(Sender: TObject);
 begin
      if FileExists('author_info.txt') then

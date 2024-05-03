@@ -300,8 +300,8 @@ object Form1: TForm1
     Left = 24
     Height = 15
     Top = 504
-    Width = 189
-    Caption = 'Количество запусков программы:'
+    Width = 68
+    Caption = 'Start counter'
     ParentColor = False
   end
   object Edit1: TEdit
